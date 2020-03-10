@@ -4,6 +4,10 @@
 <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
     <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
     <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
+	<link rel="stylesheet" href="extramarkers/css/leaflet.extra-markers.min.css" />
+	<script src="extramarkers/js/leaflet.extra-markers.min.js"></script>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+
 <style type="text/css">
 
 </style>
@@ -51,6 +55,7 @@
 <li>Display map: <a href="https://leafletjs.com/">Leaflet</a></li>
 </ul>
 </div>
+
 <script src="utils.js"></script>
 <script>
 
@@ -117,7 +122,7 @@ var findRoute = function(){
 		{
 			ballColor: "#ffffff",
 			ballOpacity: 0.8,
-			color: "#2880CA",
+			color: "cyan",
 		}
 	);
 	mly_end_marker = new Mapillary.MarkerComponent.SimpleMarker(
@@ -126,7 +131,7 @@ var findRoute = function(){
 		{
 			ballColor: "#ffffff",
 			ballOpacity: 0.8,
-			color: "#2880CA",
+			color: "darkblue",
 		}
 	);
 	var markerComponent = mly.getComponent('marker');
@@ -320,9 +325,27 @@ function initMap() {
   }).addTo(map);
   
   //とりあえずスタート点とゴール点を置く。現在位置とルートは空データを作っておく。
-	start_marker = L.marker( [37.48825, 139.92966], { draggable: true }).bindTooltip("Start").addTo( map );
-	end_marker = L.marker( [37.48736, 139.93006], { draggable: true }).bindTooltip("End").addTo( map );
-	present_marker = L.marker([0,0]).bindTooltip("Present").addTo(map);
+	options = {
+		prefix: 'fa',
+		icon: 'fa-flag',
+		shape: 'square',
+		markerColor: 'cyan'
+	};
+	start_marker = L.marker( [37.48825, 139.92966], { icon: L.ExtraMarkers.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
+	options = {
+		prefix: 'fa',
+		icon: 'fa-flag-checkered',
+		shape: 'square',
+		markerColor: 'blue-dark'
+	};
+	end_marker = L.marker( [37.48736, 139.93006], { icon: L.ExtraMarkers.icon(options), draggable: true }).bindTooltip("End").addTo( map );
+	options = {
+		prefix: 'fa',
+		icon: 'fa-male',
+		shape: 'circle',
+		markerColor: 'green'
+	};	
+	present_marker = L.marker([0,0], {icon: L.ExtraMarkers.icon(options)}).bindTooltip("Present").addTo(map);
 	route = L.polyline([], { color: 'blue', weight: 5 }).addTo(map);
 
 }

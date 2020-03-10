@@ -1,5 +1,5 @@
 
-//https://tech-blog.s-yoshiki.com/2018/05/92/
+//404 Motivation Not Found, 地球上の2地点間の距離を取得するアルゴリズム(ヒュベニ or 球面三角法)比較, https://tech-blog.s-yoshiki.com/2018/05/92/
 function hubeny(lat1, lng1, lat2, lng2) {
     function rad(deg) {
         return deg * Math.PI / 180;
@@ -55,7 +55,7 @@ function sphericalTrigonometry(lat1, lng1, lat2, lng2) {
         );
 }
 
-//https://coderwall.com/p/zrlulq/parsing-a-link-header-in-javascript
+//Andrei Sambra, Parsing a Link header in Javascript, https://coderwall.com/p/zrlulq/parsing-a-link-header-in-javascript
 // Unquote string (utility)
 function unquote(value) {
     if (value.charAt(0) == '"' && value.charAt(value.length - 1) == '"') return value.substring(1, value.length - 1);
@@ -92,7 +92,7 @@ function parseLinkHeader(header) {
 }
 //-------------
 
-
+//graphhopper, https://github.com/graphhopper/graphhopper/blob/d70b63660ac5200b03c38ba3406b8f93976628a6/web/src/main/webapp/js/ghrequest.js#L139
 function decodePath(encoded, is3D) {
     var len = encoded.length;
     var index = 0;
