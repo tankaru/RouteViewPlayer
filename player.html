@@ -24,7 +24,7 @@
 	<li>max lon: <span id="maxlon"></span></li>
 </ul>
 
-<input type="button" style="font-size:50px;" value="Find route" onclick="findRoute()">
+<input type="button" style="font-size:50px;" value="Find route" onclick="findRoute()"> <input type="button" style="font-size:50px;" value="Add via" onclick="addvia()">
 <div id="filters" style="background-color:#ccc">
 <p>Filter your view
 <ul>
@@ -71,6 +71,7 @@ let count = 0;
 let maxcount;
 let photoPoints;
 let route;
+let via;
 
 
 
@@ -99,6 +100,23 @@ function dividePoints(points, distance){
 
   }
   return dividedPoints;
+}
+
+//経由地を追加
+var addvia = function(){
+	const num = via.getLayers().length+1;
+	if (num > 3) return;
+	options = {
+		prefix: 'fa',
+		icon: 'fa-number',
+		shape: 'circle',
+		markerColor: 'blue',
+		number: num.toString()
+	};
+	let marker = L.marker( map.getCenter(), { icon: L.ExtraMarkers.icon(options), draggable: true});
+	
+	//let marker = L.marker( map.getCenter(), {draggable: true }).bindTooltip(num.toString());
+	via.addLayer(marker).addTo( map );
 }
 
 //ルート検索APIを利用して経路検索
@@ -139,8 +157,14 @@ var findRoute = function(){
 
 	//add route path with graphhopper
 	let request = new XMLHttpRequest();
+
+	//経由点
+	let viapoints = "";
+	via.eachLayer(function(layer){
+		viapoints += '&point=' + layer.getLatLng().lat + ',' + layer.getLatLng().lng;
+	});
 	//https://docs.graphhopper.com/
-	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + '&point=' + endlat + ',' + endlon + '&vehicle=foot&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
+	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + viapoints + '&point=' + endlat + ',' + endlon + '&vehicle=foot&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
 	//alert(url);
 	request.open('GET', url , true);
 	request.onload = function () {
@@ -347,6 +371,8 @@ function initMap() {
 	};	
 	present_marker = L.marker([0,0], {icon: L.ExtraMarkers.icon(options)}).bindTooltip("Present").addTo(map);
 	route = L.polyline([], { color: 'blue', weight: 5 }).addTo(map);
+	
+	via = L.layerGroup([]).addTo(map);
 
 }
 
