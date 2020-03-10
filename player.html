@@ -328,14 +328,14 @@ function initMap() {
 	options = {
 		prefix: 'fa',
 		icon: 'fa-flag',
-		shape: 'square',
+		shape: 'circle',
 		markerColor: 'cyan'
 	};
 	start_marker = L.marker( [37.48825, 139.92966], { icon: L.ExtraMarkers.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
 	options = {
 		prefix: 'fa',
 		icon: 'fa-flag-checkered',
-		shape: 'square',
+		shape: 'circle',
 		markerColor: 'blue-dark'
 	};
 	end_marker = L.marker( [37.48736, 139.93006], { icon: L.ExtraMarkers.icon(options), draggable: true }).bindTooltip("End").addTo( map );
