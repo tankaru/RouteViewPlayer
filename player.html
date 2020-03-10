@@ -1,0 +1,333 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
+    <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
+<style type="text/css">
+
+</style>
+</head>
+<body onload="initMap()">
+<h1>[pre-Alpha]Route view player</h1>
+<div style="float:left">
+<div id='mapcontainer' style='width: 640px; height: 480px;margin: 10px;'></div>
+
+<ul style="display:none;">
+	<li>min lat: <span id="minlat"></span></li>
+	<li>max lat: <span id="maxlat"></span></li>
+	<li>min lon: <span id="minlon"></span></li>
+	<li>max lon: <span id="maxlon"></span></li>
+</ul>
+
+<input type="button" style="font-size:50px;" value="Find route" onclick="findRoute()">
+<div id="filters" style="background-color:#ccc">
+<p>Filter your view
+<ul>
+<li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
+<li>Date: From <input type="date" id="start_time" value="">,  To <input type="date" id="end_time" value="">
+<li>360 panoramas <form id="pano"><input type="radio" name="pano" value="prefer" checked="checked">Prefer  <input type="radio" name="pano" value="true">Only  <input type="radio" name="pano" value="false">No</form>
+</ul>
+</div>
+</div>
+
+
+<div id='mly' style='width: 640px; height: 480px;　margin: 10px;'></div>
+<div style='align: center;'>
+<input type="button" style="font-size:50px;" title="Play Backward" value="◀" onclick="goBackward()">
+<input type="button" style="font-size:50px;" title="Prev"  value="⬅" onclick="prevImage()">
+<input type="button" style="font-size:50px;" title="Stop"  value="⏸" onclick="stopMove()">
+<input type="button" style="font-size:50px;" title="Next"  value="➡" onclick="nextImage()">
+<input type="button" style="font-size:50px;" title="Play Forward"  value="▶" onclick="goForward()">
+</div>
+<div id="results"></div>
+<div id="test"></div>
+<div id="attributions" style="margin:50px 10px; float:left">
+<p>Attributions
+<ul>
+<li>Routing is powered by <a href="https://www.graphhopper.com/">GraphHopper API</a></li>
+<li>Images from <a href="https://www.mapillary.com/">Mapillary</a></li>
+<li>Map: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li>
+<li>Display map: <a href="https://leafletjs.com/">Leaflet</a></li>
+</ul>
+</div>
+<script src="utils.js"></script>
+<script>
+
+let map;
+let start_marker;
+let end_marker;
+let present_marker;
+let mly_start_marker;
+let mly_end_marker;
+var mly;
+let timer;
+let count = 0;
+let maxcount;
+let photoPoints;
+let route;
+
+
+
+function earthDistance(point1, point2){
+  return hubeny(point1[1], point1[0], point2[1], point2[0]);
+}
+
+function dividePoints(points, distance){
+  let dividedPoints = [];
+  for(let i=0; i<points.length-1;i++){
+    const section_length = earthDistance(points[i],points[i+1]);
+    const dlat = points[i+1][1]-points[i][1];
+    const dlon = points[i+1][0]-points[i][0];    
+    const ddlat = dlat * distance/section_length;
+    const ddlon = dlon * distance/section_length;
+    
+    let dist = 0;
+    let j = 0;
+    dividedPoints.push(points[i])
+    while(true){
+      dist +=distance;
+      if (dist>section_length) break;
+      j++;
+      dividedPoints.push([points[i][0]+j*ddlon,points[i][1]+j*ddlat]);
+    }
+
+  }
+  return dividedPoints;
+}
+
+//ルート検索APIを利用して経路検索
+var findRoute = function(){
+
+	const start = start_marker.getLatLng();
+	const end = end_marker.getLatLng();
+	let startlon = start.lng;
+	let startlat = start.lat;
+	let endlon = end.lng;
+	let endlat = end.lat;
+	
+	//現在位置を初期化
+	count = 0;
+	
+	//add start/end marker on mapillary viewer
+	//how to add text to marker?
+	mly_start_marker = new Mapillary.MarkerComponent.SimpleMarker(
+		'mly_start_marker',
+		{ lat: start.lat, lon: start.lng },
+		{
+			ballColor: "#ffffff",
+			ballOpacity: 0.8,
+			color: "#2880CA",
+		}
+	);
+	mly_end_marker = new Mapillary.MarkerComponent.SimpleMarker(
+		'mly_end_marker',
+		{ lat: end.lat, lon: end.lng },
+		{
+			ballColor: "#ffffff",
+			ballOpacity: 0.8,
+			color: "#2880CA",
+		}
+	);
+	var markerComponent = mly.getComponent('marker');
+	markerComponent.add([mly_start_marker, mly_end_marker]);
+
+	//add route path with graphhopper
+	let request = new XMLHttpRequest();
+	//https://docs.graphhopper.com/
+	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + '&point=' + endlat + ',' + endlon + '&vehicle=foot&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
+	//alert(url);
+	request.open('GET', url , true);
+	request.onload = function () {
+		const results = JSON.parse(this.response);
+		const points = decodePath(results["paths"][0]["points"]);
+		//alert(JSON.stringify(points));
+		//画像表示用に10m間隔のデータを作成
+		photoPoints = dividePoints(points, 10);
+		maxcount = photoPoints.length;
+		
+
+		//地図上のルート線を更新
+		route.setLatLngs(L.GeoJSON.coordsToLatLngs(points));
+		route.redraw();
+
+		//Mapillary画像内に表示するルート用に5m間隔のデータを作成
+		navigationPoints = dividePoints(points, 3);		
+		//add markers as a path on mapillary viewer
+		let markers = [];
+		for (i=0; i<navigationPoints.length-1; i++){
+			let marker = new Mapillary.MarkerComponent.CircleMarker(
+				i.toString(),
+				{lat: navigationPoints[i][1], lon: navigationPoints[i][0]},
+				{
+
+					color: 0x0000FF,
+					opacity: 0.6,
+
+					radius: 0.5,
+				}
+			);
+			markers.push(marker);
+		}
+
+		let markerComponent = mly.getComponent('marker');
+		markerComponent.add(markers);
+		markerComponent.on(
+			Mapillary.MarkerComponent.MarkerComponent.changed,
+			function(e) {
+				console.log('Marker changed:', e.marker.id, e.marker.latLon);
+			}
+		);
+		//Show the first image
+		moveImage(0);
+
+
+	}
+	request.send();
+}
+
+var nextImage = function(){
+	moveImage(1);
+}
+
+var prevImage = function(){
+	moveImage(-1);
+}
+
+var goForward = function(){
+	clearInterval(timer);
+	timer = setInterval(nextImage, 3000);
+}
+
+var goBackward = function(){
+	clearInterval(timer);
+	timer = setInterval(prevImage, 3000);
+}
+
+var stopMove = function(){
+	clearInterval(timer);
+}
+
+
+
+function moveImage(move){
+
+	count += move;
+	//ルートの端まで移動したら移動を停止する
+	if (count <0){
+		count = 0;
+		clearInterval(timer);
+	} else if (count > maxcount-1) {
+		count = maxcount;
+		clearInterval(timer);
+	} else {
+		present_marker.setLatLng(L.GeoJSON.coordsToLatLng(photoPoints[count]));
+	}
+
+	//make optional filters
+	let filters = "";
+	const usernames = document.getElementById("usernames").value;
+	const start_time = document.getElementById("start_time").value;	
+	const end_time = document.getElementById("end_time").value;	
+	const pano_elem = document.getElementById("pano");
+	const pano = pano_elem.pano.value;
+	if (usernames != "") filters += '&usernames=' + usernames;
+	if (start_time != "") filters += '&start_time=' + start_time;	
+	if (end_time != "") filters += '&end_time=' + end_time;	
+	
+	
+	let request = new XMLHttpRequest();
+	//固定画像取得
+	const url_fixed_image = 'https://a.mapillary.com/v3/images_computed?client_id=NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTplZDBiMjFkZjcxNjFhNjEw&closeto=' + photoPoints[count][0] + ',' + photoPoints[count][1] + '&lookat=' + photoPoints[count+move][0] + ',' + photoPoints[count+move][1] +'&radius=10&pano=false&computed_coordinates' + filters;
+	//360画像取得
+	const url_360_image = 'https://a.mapillary.com/v3/images_computed?client_id=NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTplZDBiMjFkZjcxNjFhNjEw&closeto=' + photoPoints[count][0] + ',' + photoPoints[count][1] + '&radius=10&pano=true&computed_coordinates' + filters;
+	
+	//360画像除外のときは固定画像のみ取得
+	let url = url_360_image;
+	if (pano == "false") url = url_fixed_image;
+	
+	request.open('GET', url, true);
+	request.onload = function () {
+		const data = this.response;
+		//document.getElementById('test').innerText = JSON.stringify(data);
+		const jsondata = JSON.parse(data);
+		const features = jsondata["features"];
+		if (features.length > 0){
+			const feature = features[0];
+			const properties = feature["properties"];
+			const key = properties["key"];
+			//console.log(key);
+			mly.moveToKey(key)
+				.then(
+					function(node) { console.log(node.key); },
+					function(error) { console.error(error); });
+
+		} else if (pano == "prefer"){ //360画像優先のときは、360画像が取得できなかったら固定画像を取得する
+			let request = new XMLHttpRequest();
+
+			url = url_fixed_image;
+			request.open('GET', url, true);
+			request.onload = function () {
+			const data = this.response;
+				const jsondata = JSON.parse(data);
+				const features = jsondata["features"];
+				if (features.length > 0){
+					const feature = features[0];
+					const properties = feature["properties"];
+					const key = properties["key"];
+					//console.log(key);
+					mly.moveToKey(key)
+				}
+			}
+			request.send();
+		}
+
+	};
+	request.send();
+
+}
+
+//http://ktgis.net/service/leafletlearn/index.html
+function initMap() {
+	mly = new Mapillary.Viewer(
+		'mly',
+		// client id
+		'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTplZDBiMjFkZjcxNjFhNjEw',
+		// photo id
+		'PWzRSDnsFE2bNfuhKl_b7g',
+		//activate immediately
+		{
+			component: {
+				cover: false,
+				marker: true,
+				popup: true,
+			},
+		});
+  //地図を表示するdiv要素のidを設定
+  map = L.map('mapcontainer');
+  //地図の中心とズームレベルを指定
+  map.setView([37.48773, 139.93028], 17);
+
+
+
+  //表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
+  L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
+	  maxZoom: 21,
+	  maxNativeZoom: 19,
+	  minZoom: 16,
+	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
+  }).addTo(map);
+  
+  //とりあえずスタート点とゴール点を置く。現在位置とルートは空データを作っておく。
+	start_marker = L.marker( [37.48825, 139.92966], { draggable: true }).bindTooltip("Start").addTo( map );
+	end_marker = L.marker( [37.48736, 139.93006], { draggable: true }).bindTooltip("End").addTo( map );
+	present_marker = L.marker([0,0]).bindTooltip("Present").addTo(map);
+	route = L.polyline([], { color: 'blue', weight: 5 }).addTo(map);
+
+}
+
+</script>
+</body>
+</html>
+
