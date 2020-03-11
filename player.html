@@ -4,18 +4,48 @@
 <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
     <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
     <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
-	<link rel="stylesheet" href="extramarkers/css/leaflet.extra-markers.min.css" />
-	<script src="extramarkers/js/leaflet.extra-markers.min.js"></script>
+	<link rel="stylesheet" href="leaflet-beautify-marker-icon.css" />
+	<script src="leaflet-beautify-marker-icon.js"></script>
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 
 <style type="text/css">
+
+.routing_button, .navigation_button {
+  font-size: 50px;
+
+}
+
+#routing {
+	float:left;
+	padding: 10px;
+}
+#mapcontainer {
+	width: 640px;
+	height: 480px;
+
+}
+#filters {
+	margin: 10px
+}
+
+#player {
+	float:left;
+	padding: 10px
+}
+
+#mly {
+	width: 640px;
+	height: 480px;
+}
+
+
 
 </style>
 </head>
 <body onload="initMap()">
 <h1>[pre-Alpha]Route view player</h1>
-<div style="float:left">
-<div id='mapcontainer' style='width: 640px; height: 480px;margin: 10px;'></div>
+<div id="routing" >
+<div id='mapcontainer' ></div>
 
 <ul style="display:none;">
 	<li>min lat: <span id="minlat"></span></li>
@@ -24,7 +54,8 @@
 	<li>max lon: <span id="maxlon"></span></li>
 </ul>
 
-<input type="button" style="font-size:50px;" value="Find route" onclick="findRoute()"> <input type="button" style="font-size:50px;" value="Add via" onclick="addvia()">
+<input type="button" class="routing_button"  value="Find route" onclick="findRoute()"> <input type="button" class="routing_button"  value="Add via" onclick="addvia()">
+
 <div id="filters" style="background-color:#ccc">
 <p>Filter your view
 <ul>
@@ -35,14 +66,15 @@
 </div>
 </div>
 
-
-<div id='mly' style='width: 640px; height: 480px;　margin: 10px;'></div>
-<div style='align: center;'>
-<input type="button" style="font-size:50px;" title="Play Backward" value="◀" onclick="goBackward()">
-<input type="button" style="font-size:50px;" title="Prev"  value="⬅" onclick="prevImage()">
-<input type="button" style="font-size:50px;" title="Stop"  value="⏸" onclick="stopMove()">
-<input type="button" style="font-size:50px;" title="Next"  value="➡" onclick="nextImage()">
-<input type="button" style="font-size:50px;" title="Play Forward"  value="▶" onclick="goForward()">
+<div id="player">
+<div id='mly'></div>
+<div>
+<input type="button" class="navigation_button" title="Play Backward" value="◀" onclick="goBackward()">
+<input type="button" class="navigation_button" title="Prev"  value="⬅" onclick="prevImage()">
+<input type="button" class="navigation_button" title="Stop"  value="⏸" onclick="stopMove()">
+<input type="button" class="navigation_button" title="Next"  value="➡" onclick="nextImage()">
+<input type="button" class="navigation_button" title="Play Forward"  value="▶" onclick="goForward()">
+</div>
 </div>
 <div id="results"></div>
 <div id="test"></div>
@@ -107,13 +139,11 @@ var addvia = function(){
 	const num = via.getLayers().length+1;
 	if (num > 3) return;
 	options = {
-		prefix: 'fa',
-		icon: 'fa-number',
-		shape: 'circle',
-		markerColor: 'blue',
-		number: num.toString()
+		iconShape: 'marker',
+		isAlphaNumericIcon: true,
+		text: num.toString()
 	};
-	let marker = L.marker( map.getCenter(), { icon: L.ExtraMarkers.icon(options), draggable: true});
+	let marker = L.marker( map.getCenter(), { icon: L.BeautifyIcon.icon(options), draggable: true});
 	
 	//let marker = L.marker( map.getCenter(), {draggable: true }).bindTooltip(num.toString());
 	via.addLayer(marker).addTo( map );
@@ -140,7 +170,7 @@ var findRoute = function(){
 		{
 			ballColor: "#ffffff",
 			ballOpacity: 0.8,
-			color: "cyan",
+			color: "#4d639f",
 		}
 	);
 	mly_end_marker = new Mapillary.MarkerComponent.SimpleMarker(
@@ -149,7 +179,7 @@ var findRoute = function(){
 		{
 			ballColor: "#ffffff",
 			ballOpacity: 0.8,
-			color: "darkblue",
+			color: "#1d695f",
 		}
 	);
 	var markerComponent = mly.getComponent('marker');
@@ -350,26 +380,30 @@ function initMap() {
   
   //とりあえずスタート点とゴール点を置く。現在位置とルートは空データを作っておく。
 	options = {
-		prefix: 'fa',
-		icon: 'fa-flag',
-		shape: 'circle',
-		markerColor: 'cyan'
+		icon: 'flag',
+		iconShape: 'marker',
+		backgroundColor: '#4d639f',
+		borderColor: '#4d639f',
+		textColor: 'white'
 	};
-	start_marker = L.marker( [37.48825, 139.92966], { icon: L.ExtraMarkers.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
+	start_marker = L.marker( [37.48825, 139.92966], { icon: L.BeautifyIcon.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
 	options = {
-		prefix: 'fa',
-		icon: 'fa-flag-checkered',
-		shape: 'circle',
-		markerColor: 'blue-dark'
+		icon: 'flag-checkered',
+		iconShape: 'marker',
+		backgroundColor: '#1d695f',
+		borderColor: '#1d695f',
+		textColor: 'white'
 	};
-	end_marker = L.marker( [37.48736, 139.93006], { icon: L.ExtraMarkers.icon(options), draggable: true }).bindTooltip("End").addTo( map );
+	end_marker = L.marker( [37.48736, 139.93006], { icon: L.BeautifyIcon.icon(options), draggable: true }).bindTooltip("End").addTo( map );
 	options = {
-		prefix: 'fa',
-		icon: 'fa-male',
-		shape: 'circle',
-		markerColor: 'green'
+
+		icon: 'male',
+		iconShape: 'circle',
+		backgroundColor: 'green',
+		borderColor: 'green',
+		textColor: 'white'
 	};	
-	present_marker = L.marker([0,0], {icon: L.ExtraMarkers.icon(options)}).bindTooltip("Present").addTo(map);
+	present_marker = L.marker([0,0], {icon: L.BeautifyIcon.icon(options)}).bindTooltip("Present").addTo(map);
 	route = L.polyline([], { color: 'blue', weight: 5 }).addTo(map);
 	
 	via = L.layerGroup([]).addTo(map);
