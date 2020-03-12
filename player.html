@@ -412,18 +412,42 @@ function initMap() {
   map = L.map('mapcontainer');
   //地図の中心とズームレベルを指定
   map.setView([37.48773, 139.93028], 17);
+  
+
 
 
 
   //表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
-  L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  let osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
 	  maxZoom: 21,
 	  maxNativeZoom: 19,
 	  minZoom: 4,
 	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
   }).addTo(map);
-  
+//  var kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg',{
+//    attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+//	});
+	
+	let baseMap = {
+		"OpenStreetMap":osmLayer,
+//		"国土地理院オルソ":kokudoLayer,
+	};
+ 
+	var mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
+		attribution: '(C)<a href="https://www.mapillary.com/">Mapillary</a>, CC BY',
+	  maxZoom: 21,
+	  maxNativeZoom: 17,
+	});
+	mapillaryLayer.setOpacity(0.65);
+	var overlayLayer = {
+		"Mapillary":mapillaryLayer,
+	}
+
+	//レイヤ設定
+	var layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
+	layerControl.addTo(map);
+ 
   //とりあえずスタート点とゴール点を置く。現在位置とルートは空データを作っておく。
 	options = {
 		icon: 'flag',
