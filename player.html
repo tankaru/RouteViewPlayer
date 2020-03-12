@@ -10,9 +10,21 @@
 
 <style type="text/css">
 
-.routing_button, .navigation_button {
-  font-size: 50px;
+#navigation_buttons {
+	margin: 5px;
+}
 
+#navigation_buttons input {
+  font-size: 30px;
+
+}
+
+#routing_buttons {
+	margin: 5px;
+}
+
+#routing_buttons input {
+	font-size: 30px;
 }
 
 #routing {
@@ -38,7 +50,15 @@
 	height: 480px;
 }
 
+#attributions {
+	clear:left;
 
+	background-color: #ddd;
+}
+
+#filters {
+	background-color:#ccc
+}
 
 </style>
 </head>
@@ -53,10 +73,12 @@
 	<li>min lon: <span id="minlon"></span></li>
 	<li>max lon: <span id="maxlon"></span></li>
 </ul>
-
-<input type="button" class="routing_button"  value="Find route" onclick="findRoute()"> <input type="button" class="routing_button"  value="Add via" onclick="addvia()">
-
-<div id="filters" style="background-color:#ccc">
+<div id="routing_buttons">
+<input type="button" class="routing_button"  id="start_button" value="+Start" onclick="addstart()">
+<input type="button" class="routing_button"  id="goal_button" value="+Goal" onclick="addgoal()">
+<input type="button" class="routing_button"  id="via_button" value="+via" onclick="addvia()">
+<input type="button" class="routing_button"  value="Find route" onclick="findRoute()"></div>
+<div id="filters">
 <p>Filter your view
 <ul>
 <li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
@@ -68,17 +90,19 @@
 
 <div id="player">
 <div id='mly'></div>
-<div>
+<div id="navigation_buttons">
 <input type="button" class="navigation_button" title="Play Backward" value="◀" onclick="goBackward()">
 <input type="button" class="navigation_button" title="Prev"  value="⬅" onclick="prevImage()">
 <input type="button" class="navigation_button" title="Stop"  value="⏸" onclick="stopMove()">
 <input type="button" class="navigation_button" title="Next"  value="➡" onclick="nextImage()">
 <input type="button" class="navigation_button" title="Play Forward"  value="▶" onclick="goForward()">
 </div>
-</div>
+<p>Note: Max 1000m to play</p>
 <div id="results"></div>
+</div>
+
 <div id="test"></div>
-<div id="attributions" style="margin:50px 10px; float:left">
+<div id="attributions">
 <p>Attributions
 <ul>
 <li>Routing is powered by <a href="https://www.graphhopper.com/">GraphHopper API</a></li>
@@ -134,10 +158,21 @@ function dividePoints(points, distance){
   return dividedPoints;
 }
 
+var addstart = function(){
+	start_marker.setLatLng(map.getCenter());
+}
+
+var addgoal = function(){
+	end_marker.setLatLng(map.getCenter());
+}
+
 //経由地を追加
 var addvia = function(){
 	const num = via.getLayers().length+1;
-	if (num > 3) return;
+	if (num > 3){
+		document.getElementById("via_button").style.display ="none";
+		return;
+	}
 	options = {
 		iconShape: 'marker',
 		isAlphaNumericIcon: true,
@@ -195,10 +230,12 @@ var findRoute = function(){
 	});
 	//https://docs.graphhopper.com/
 	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + viapoints + '&point=' + endlat + ',' + endlon + '&vehicle=foot&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
+
 	//alert(url);
 	request.open('GET', url , true);
 	request.onload = function () {
 		const results = JSON.parse(this.response);
+		//document.getElementById("results").innerText = this.response;
 		const points = decodePath(results["paths"][0]["points"]);
 		//alert(JSON.stringify(points));
 		//画像表示用に10m間隔のデータを作成
@@ -239,6 +276,15 @@ var findRoute = function(){
 		);
 		//Show the first image
 		moveImage(0);
+		
+		const distance = results["paths"][0]["distance"];
+		document.getElementById("results").innerText = "Route distance: " + Math.round(Number(distance)) + "m";
+		//if route distance is longer than 1000m, navigation diactivated
+		if (distance > 1000){
+			document.getElementById("navigation_buttons").style.display = "none"; 
+		} else {
+			document.getElementById("navigation_buttons").style.display = "block";
+		}
 
 
 	}
@@ -374,7 +420,7 @@ function initMap() {
 	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
 	  maxZoom: 21,
 	  maxNativeZoom: 19,
-	  minZoom: 16,
+	  minZoom: 4,
 	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
   }).addTo(map);
   
@@ -386,7 +432,7 @@ function initMap() {
 		borderColor: '#4d639f',
 		textColor: 'white'
 	};
-	start_marker = L.marker( [37.48825, 139.92966], { icon: L.BeautifyIcon.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
+	start_marker = L.marker( [0,0], { icon: L.BeautifyIcon.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
 	options = {
 		icon: 'flag-checkered',
 		iconShape: 'marker',
@@ -394,7 +440,7 @@ function initMap() {
 		borderColor: '#1d695f',
 		textColor: 'white'
 	};
-	end_marker = L.marker( [37.48736, 139.93006], { icon: L.BeautifyIcon.icon(options), draggable: true }).bindTooltip("End").addTo( map );
+	end_marker = L.marker( [0,0], { icon: L.BeautifyIcon.icon(options), draggable: true }).bindTooltip("End").addTo( map );
 	options = {
 
 		icon: 'male',
