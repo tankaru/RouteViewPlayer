@@ -64,44 +64,53 @@
 </head>
 <body onload="initMap()">
 <h1>[pre-Alpha]Route view player</h1>
-<div id="routing" >
-<div id='mapcontainer' ></div>
+<div id="routing">
+    <div id='mapcontainer'></div>
 
-<ul style="display:none;">
-	<li>min lat: <span id="minlat"></span></li>
-	<li>max lat: <span id="maxlat"></span></li>
-	<li>min lon: <span id="minlon"></span></li>
-	<li>max lon: <span id="maxlon"></span></li>
-</ul>
-<div id="routing_buttons">
-<input type="button" class="routing_button"  id="start_button" value="+Start" onclick="addstart()">
-<input type="button" class="routing_button"  id="goal_button" value="+Goal" onclick="addgoal()">
-<input type="button" class="routing_button"  id="via_button" value="+via" onclick="addvia()">
-<input type="button" class="routing_button"  value="Find route" onclick="findRoute()"></div>
-<div id="filters">
-<p>Filter your view
-<ul>
-<li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
-<li>Date: From <input type="date" id="start_time" value="">,  To <input type="date" id="end_time" value="">
-<li>360 panoramas <form id="pano"><input type="radio" name="pano" value="prefer" checked="checked">Prefer  <input type="radio" name="pano" value="true">Only  <input type="radio" name="pano" value="false">No</form>
-</ul>
-</div>
+    <ul style="display:none;">
+        <li>min lat: <span id="minlat"></span></li>
+        <li>max lat: <span id="maxlat"></span></li>
+        <li>min lon: <span id="minlon"></span></li>
+        <li>max lon: <span id="maxlon"></span></li>
+    </ul>
+    <div id="routing_buttons">
+        <input type="button" class="routing_button" id="start_button" value="+Start" onclick="addstart()">
+        <input type="button" class="routing_button" id="goal_button" value="+Goal" onclick="addgoal()">
+        <input type="button" class="routing_button" id="via_button" value="+via" onclick="addvia()">
+        <input type="button" class="routing_button" value="Find route" onclick="findRoute()">
+
+        <div>Transport: <form id="transport"><input type="radio" name="transport" value="car" checked="checked">Car  <input type="radio" name="transport" value="foot">Foot</form></div>
+    </div>
+    <input type="button" class="" value="Make link" onclick="makeTempLink()">
+
 </div>
 
 <div id="player">
-<div id='mly'></div>
-<div id="navigation_buttons">
-<input type="button" class="navigation_button" title="Play Backward" value="◀" onclick="goBackward()">
-<input type="button" class="navigation_button" title="Prev"  value="⬅" onclick="prevImage()">
-<input type="button" class="navigation_button" title="Stop"  value="⏸" onclick="stopMove()">
-<input type="button" class="navigation_button" title="Next"  value="➡" onclick="nextImage()">
-<input type="button" class="navigation_button" title="Play Forward"  value="▶" onclick="goForward()">
-</div>
-<p>Note: Max 1000m to play</p>
-<div id="results"></div>
+    <div id='mly'></div>
+    <div id="navigation_buttons">
+        <input type="button" class="navigation_button" title="Play Backward" value="◀" onclick="goBackward()">
+        <input type="button" class="navigation_button" title="Prev" value="⬅" onclick="prevImage()">
+        <input type="button" class="navigation_button" title="Stop" value="⏸" onclick="stopMove()">
+        <input type="button" class="navigation_button" title="Next" value="➡" onclick="nextImage()">
+        <input type="button" class="navigation_button" title="Play Forward" value="▶" onclick="goForward()">
+    </div>
+
+    <div id="filters">
+        <p>
+            Filter your view
+            <ul>
+                <li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
+                <li>Date: From <input type="date" id="start_time" value="">,  To <input type="date" id="end_time" value="">
+                <li>360 panoramas <form id="pano"><input type="radio" name="pano" value="prefer" checked="checked">Prefer  <input type="radio" name="pano" value="true">Only  <input type="radio" name="pano" value="false">No</form>
+            </ul>
+    </div>
+    <p>Note: Max 1000m to play</p>
+    <div id="results"></div>
+
 </div>
 
 <div id="test"></div>
+<span id="templink"></span>
 <div id="attributions">
 <p>Attributions
 <ul>
@@ -156,7 +165,20 @@ function dividePoints(points, distance){
 
   }
   return dividedPoints;
-}
+    }
+    //permalinkならぬtemplinkを作る。多分後で仕様が変わるため。
+    var makeTempLink = function () {
+        let url = location.href.replace(/\?.*$/, '');
+        let s = start_marker.getLatLng();
+        let e = end_marker.getLatLng();
+        //座標がどれもゼロでない(多分何かセットされている)場合のみ、templinkを作成する
+        let validpos = s.lat * s.lng * e.lat * e.lng;
+        if (validpos) {
+
+            let templink = url + "?point=" + s.lat + "," + s.lng + "&point=" + e.lat + "," + e.lng;
+            document.getElementById("templink").innerText = "Link: " + templink;
+        }
+    }
 
 var addstart = function(){
 	start_marker.setLatLng(map.getCenter());
@@ -227,9 +249,13 @@ var findRoute = function(){
 	let viapoints = "";
 	via.eachLayer(function(layer){
 		viapoints += '&point=' + layer.getLatLng().lat + ',' + layer.getLatLng().lng;
-	});
+    });
+    //移動手段
+    const transport_elem = document.getElementById("transport");
+    const transport = transport_elem.transport.value;
+
 	//https://docs.graphhopper.com/
-	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + viapoints + '&point=' + endlat + ',' + endlon + '&vehicle=foot&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
+	const url = 'https://graphhopper.com/api/1/route?point=' + startlat + ',' + startlon + viapoints + '&point=' + endlat + ',' + endlon + '&vehicle=' + transport + '&locale=ja&calc_points=true&key=1d71cf85-3c57-462f-9ecb-3307df72d594&instructions=true';
 
 	//alert(url);
 	request.open('GET', url , true);
@@ -447,7 +473,20 @@ function initMap() {
 	//レイヤ設定
 	var layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
 	layerControl.addTo(map);
- 
+
+	//urlに付与されたスタートとゴールの初期値を読む
+    let url = location.href;
+
+    let checkinit, start_lat, start_lon, end_lat, end_lon;
+    let start = L.latLng(0, 0);
+    let end = L.latLng(0, 0);
+  checkinit = url.match(/\?point=(-?\d[0-9.]*),(-?\d[0-9.]*)&point=(-?\d[0-9.]*),(-?\d[0-9.]*)/);
+
+  //初期値が付いていなかったらゼロ点に置く
+	if (checkinit){
+		[start.lat, start.lng, end.lat, end.lng] = [checkinit[1], checkinit[2], checkinit[3], checkinit[4]];
+	}
+
   //とりあえずスタート点とゴール点を置く。現在位置とルートは空データを作っておく。
 	options = {
 		icon: 'flag',
@@ -456,7 +495,7 @@ function initMap() {
 		borderColor: '#4d639f',
 		textColor: 'white'
 	};
-	start_marker = L.marker( [0,0], { icon: L.BeautifyIcon.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
+	start_marker = L.marker( start, { icon: L.BeautifyIcon.icon(options), draggable: true}).bindTooltip("Start").addTo( map );
 	options = {
 		icon: 'flag-checkered',
 		iconShape: 'marker',
@@ -464,7 +503,7 @@ function initMap() {
 		borderColor: '#1d695f',
 		textColor: 'white'
 	};
-	end_marker = L.marker( [0,0], { icon: L.BeautifyIcon.icon(options), draggable: true }).bindTooltip("End").addTo( map );
+	end_marker = L.marker( end, { icon: L.BeautifyIcon.icon(options), draggable: true }).bindTooltip("End").addTo( map );
 	options = {
 
 		icon: 'male',
@@ -476,8 +515,13 @@ function initMap() {
 	present_marker = L.marker([0,0], {icon: L.BeautifyIcon.icon(options)}).bindTooltip("Present").addTo(map);
 	route = L.polyline([], { color: 'blue', weight: 5 }).addTo(map);
 	
-	via = L.layerGroup([]).addTo(map);
+    via = L.layerGroup([]).addTo(map);
 
+    //初期位置が設定されていたら、自動でルート検索する
+    if (checkinit) {
+        map.fitBounds([start, end]);
+        findRoute();
+    }
 }
 
 </script>
