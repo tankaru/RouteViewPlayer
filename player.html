@@ -171,11 +171,19 @@ function dividePoints(points, distance){
         let url = location.href.replace(/\?.*$/, '');
         let s = start_marker.getLatLng();
         let e = end_marker.getLatLng();
+
+        let viaparam = "";
+        let vianum = 1;
+        via.eachLayer(function (layer) {
+            viaparam += "&via" + vianum + "=" + layer.getLatLng().lat + "," + layer.getLatLng().lng;
+            vianum++;
+
+        });
         //座標がどれもゼロでない(多分何かセットされている)場合のみ、templinkを作成する
         let validpos = s.lat * s.lng * e.lat * e.lng;
         if (validpos) {
 
-            let templink = url + "?point=" + s.lat + "," + s.lng + "&point=" + e.lat + "," + e.lng;
+            let templink = url + "?point=" + s.lat + "," + s.lng + "&point=" + e.lat + "," + e.lng + viaparam;
             document.getElementById("templink").innerText = "Link: " + templink;
         }
     }
@@ -191,10 +199,7 @@ var addgoal = function(){
 //経由地を追加
 var addvia = function(){
 	const num = via.getLayers().length+1;
-	if (num > 3){
-		document.getElementById("via_button").style.display ="none";
-		return;
-	}
+
 	options = {
 		iconShape: 'marker',
 		isAlphaNumericIcon: true,
@@ -203,8 +208,47 @@ var addvia = function(){
 	let marker = L.marker( map.getCenter(), { icon: L.BeautifyIcon.icon(options), draggable: true});
 	
 	//let marker = L.marker( map.getCenter(), {draggable: true }).bindTooltip(num.toString());
-	via.addLayer(marker).addTo( map );
+    via.addLayer(marker).addTo(map);
+
+    if (num >= 3) {
+        document.getElementById("via_button").style.display = "none";
+    }
 }
+
+    function strToLatLng(str) {
+        const ll = str.match(/(-?\d[0-9.]*),(-?\d[0-9.]*)/);
+        if (ll) {
+            return L.latLng([ll[1],ll[2]])
+        }
+    }
+
+    function initiatevia(key, number) {
+        const url = location.href;
+        const parser = new URL(url);
+        if (parser.searchParams.has(key)) {
+            const pos = parser.searchParams.get(key);
+            options = {
+                iconShape: 'marker',
+                isAlphaNumericIcon: true,
+                text: number.toString()
+            };
+            let marker = L.marker(strToLatLng(pos), { icon: L.BeautifyIcon.icon(options), draggable: true });
+            via.addLayer(marker).addTo(map);
+            return true;
+        }
+
+    }
+
+    //Viaの初期値を設定
+    var initvia = function () {
+        initiatevia("via1", 1);
+        initiatevia("via2", 2);
+        initiatevia("via3", 3);
+        const num = via.getLayers().length;
+        if (num >= 3) {
+            document.getElementById("via_button").style.display = "none";
+        }
+    }
 
 //ルート検索APIを利用して経路検索
 var findRoute = function(){
@@ -519,8 +563,14 @@ function initMap() {
 
     //初期位置が設定されていたら、自動でルート検索する
     if (checkinit) {
-        map.fitBounds([start, end]);
+        initvia();
+        let markers = [start, end];
+        via.eachLayer(function (layer) {
+            markers.push(layer.getLatLng());
+        });
+        map.fitBounds(markers);
         findRoute();
+
     }
 }
 
