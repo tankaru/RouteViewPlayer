@@ -1,5 +1,6 @@
 <html>
 <head>
+	<title>Route view player</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
     <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
@@ -80,8 +81,10 @@
         <input type="button" class="routing_button" value="Find route" onclick="findRoute()">
 
         <div>Transport: <form id="transport"><input type="radio" name="transport" value="car" checked="checked">Car  <input type="radio" name="transport" value="foot">Foot</form></div>
-    </div>
-    <input type="button" class="" value="Make link" onclick="makeTempLink()">
+
+	</div>
+	<input type="button" class="" value="Make permalink" onclick="makeTempLink()">
+	<input type="text" id="templink" style="display: none;">
 
 </div>
 
@@ -110,7 +113,7 @@
 </div>
 
 <div id="test"></div>
-<span id="templink"></span>
+
 <div id="attributions">
 <p>Attributions
 <ul>
@@ -183,8 +186,11 @@ function dividePoints(points, distance){
         let validpos = s.lat * s.lng * e.lat * e.lng;
         if (validpos) {
 
-            let templink = url + "?point=" + s.lat + "," + s.lng + "&point=" + e.lat + "," + e.lng + viaparam;
-            document.getElementById("templink").innerText = "Link: " + templink;
+			let templink = url + "?point=" + s.lat + "," + s.lng + "&point=" + e.lat + "," + e.lng + viaparam;
+			
+			document.getElementById("templink").value = templink;
+			document.getElementById("templink").style = "display: inline-block";
+
         }
     }
 
