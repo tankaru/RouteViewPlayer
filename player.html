@@ -9,31 +9,16 @@
 	<script src="leaflet-beautify-marker-icon.js"></script>
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+
 <style type="text/css">
 
-#navigation_buttons {
-	margin: 5px;
-}
 
-#navigation_buttons input {
-  font-size: 30px;
-
-}
-
-#routing_buttons {
-	margin: 5px;
-}
-
-#routing_buttons input {
-	font-size: 30px;
-}
-
-#routing {
-	float:left;
-	padding: 10px;
-}
 #mapcontainer {
-	width: 640px;
+	width: 100%;
 	height: 480px;
 
 }
@@ -41,21 +26,11 @@
 	margin: 10px
 }
 
-#player {
-	float:left;
-	padding: 10px
-}
-
 #mly {
-	width: 640px;
+	width: 100%;
 	height: 480px;
 }
 
-#attributions {
-	clear:left;
-
-	background-color: #ddd;
-}
 
 #filters {
 	background-color:#ccc
@@ -64,58 +39,70 @@
 </style>
 </head>
 <body onload="initMap()">
-<h1>[pre-Alpha]Route view player</h1>
-<div id="routing">
-    <div id='mapcontainer'></div>
-
-    <ul style="display:none;">
-        <li>min lat: <span id="minlat"></span></li>
-        <li>max lat: <span id="maxlat"></span></li>
-        <li>min lon: <span id="minlon"></span></li>
-        <li>max lon: <span id="maxlon"></span></li>
-    </ul>
-    <div id="routing_buttons">
-        <input type="button" class="routing_button" id="start_button" value="+Start" onclick="addstart()">
-        <input type="button" class="routing_button" id="goal_button" value="+Goal" onclick="addgoal()">
-        <input type="button" class="routing_button" id="via_button" value="+via" onclick="addvia()">
-        <input type="button" class="routing_button" value="Find route" onclick="findRoute()">
-
-        <div>Transport: <form id="transport"><input type="radio" name="transport" value="car" checked="checked">Car  <input type="radio" name="transport" value="foot">Foot</form></div>
-
+	<div class="container-fluid bg-primary text-light">
+		<h1>Route view player</h1>
 	</div>
-	<input type="button" class="" value="Make permalink" onclick="makeTempLink()">
-	<input type="text" id="templink" style="display: none;">
+	<div class="container-fluid">
+		<div class="row">
+			<div id="routing" class="col-lg-6 bg-white">
+				<div id='mapcontainer'></div>
 
-</div>
+				<ul style="display:none;">
+					<li>min lat: <span id="minlat"></span></li>
+					<li>max lat: <span id="maxlat"></span></li>
+					<li>min lon: <span id="minlon"></span></li>
+					<li>max lon: <span id="maxlon"></span></li>
+				</ul>
+				<div id="routing_buttons">
 
-<div id="player">
-    <div id='mly'></div>
-    <div id="navigation_buttons">
-        <input type="button" class="navigation_button" title="Play Backward" value="◀" onclick="goBackward()">
-        <input type="button" class="navigation_button" title="Prev" value="⬅" onclick="prevImage()">
-        <input type="button" class="navigation_button" title="Stop" value="⏸" onclick="stopMove()">
-        <input type="button" class="navigation_button" title="Next" value="➡" onclick="nextImage()">
-        <input type="button" class="navigation_button" title="Play Forward" value="▶" onclick="goForward()">
-    </div>
+					<button type="button" class="btn btn-primary" id="start_button" onclick="addstart()">+Start</button>
+					<button type="button" class="btn btn-primary" id="goal_button" onclick="addgoal()">+Goal</button>
+					<button type="button" class="btn btn-primary" id="via_button" onclick="addvia()">+via</button>
+					<button type="button" class="btn btn-primary" onclick="findRoute()">Find route</button>
 
-    <div id="filters">
-        <p>
-            Filter your view
-            <ul>
-                <li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
-                <li>Date: From <input type="date" id="start_time" value="">,  To <input type="date" id="end_time" value="">
-                <li>360 panoramas <form id="pano"><input type="radio" name="pano" value="prefer" checked="checked">Prefer  <input type="radio" name="pano" value="true">Only  <input type="radio" name="pano" value="false">No</form>
-            </ul>
-    </div>
-    <p>Note: Max 1000m to play</p>
-    <div id="results"></div>
 
-</div>
+					<div>Transport: <form id="transport"><input type="radio" name="transport" value="car"
+								checked="checked">Car <input type="radio" name="transport" value="foot">Foot</form>
+					</div>
 
+				</div>
+				<button type="button" class="btn btn-secondary" onclick="makeTempLink()">Make permalink</button>
+				<input type="text" id="templink" style="display: none;">
+
+			</div>
+
+			<div id="player" class="col-lg-6 bg-white">
+				<div id='mly'></div>
+				<div id="navigation_buttons">
+					<button type="button" class="btn btn-primary" title="Play Backward" onclick="goBackward()">◀</button>
+					<button type="button" class="btn btn-primary" title="Prev" onclick="prevImage()">⬅</button>
+					<button type="button" class="btn btn-primary" title="Stop" onclick="stopMove()">⏸</button>
+					<button type="button" class="btn btn-primary" title="Next" onclick="nextImage()">➡</button>
+					<button type="button" class="btn btn-primary" title="Play Forward" onclick="goForward()">▶</button>
+
+				</div>
+
+				<div id="filters">
+					<p>
+						Filter your view
+						<ul>
+							<li>User: <input type="text" size="20" id="usernames" title="Mapillary username" value="">
+							<li>Date: From <input type="date" id="start_time" value="">, To <input type="date"
+									id="end_time" value="">
+							<li>360 panoramas <form id="pano"><input type="radio" name="pano" value="prefer"
+										checked="checked">Prefer <input type="radio" name="pano" value="true">Only <input
+										type="radio" name="pano" value="false">No</form>
+						</ul>
+				</div>
+				<p>Note: Max 1000m to play</p>
+				<div id="results"></div>
+
+			</div>
+		</div>
+	</div>
 <div id="test"></div>
 
-<div id="attributions">
-<p>Attributions
+<div id="attributions" class="container-fluid alert-secondary">
 <ul>
 <li>Routing is powered by <a href="https://www.graphhopper.com/">GraphHopper API</a></li>
 <li>Images from <a href="https://www.mapillary.com/">Mapillary</a></li>
@@ -124,6 +111,11 @@
 </ul>
 </div>
 <p>Bug report at <a href="https://github.com/tankaru/RouteViewPlayer">Github</a></p>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+
 <script src="utils.js"></script>
 <script>
 
